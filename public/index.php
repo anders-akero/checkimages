@@ -41,8 +41,8 @@ if (!is_dir($folder)) {
 
 $images = scandir($folder);
 
-$timestampStart = substr($date, 2) . $startTime . 00;
-$timestampEnd = substr($date, 2) . $endTime . 00;
+$timestampStart = substr($date, 2) . $startTime . '00';
+$timestampEnd = substr($date, 2) . $endTime . '00';
 
 if (isset($_GET['image'])) {
     $image = $_GET['image'];
@@ -70,9 +70,8 @@ foreach ($images as $image) {
         break;
     }
     $imagePath = $folder . '/' . $image;
-
     $imgData = base64_encode(file_get_contents($imagePath));
-    $src = 'data: ' . mime_content_type($img_file) . ';base64,' . $imgData;
+    $src = 'data: image/jpeg;base64,' . $imgData;
     ?>
     <img src="<?= $src; ?>" alt="" style="max-width: 100%;">
     <a href="?image=<?= $image; ?>&auth=<?= $_GET['auth']; ?>&download=true">Download</a>
