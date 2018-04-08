@@ -1,86 +1,85 @@
 <?php
-if (!isset($_GET['auth'])) {
-    die('Unauthorised');
-}
-if ($_GET['auth'] !== 'princessessee') {
-    die('You are not allowed to see this!');
-}
 
-$startTime = '0955';//format HHMM
-$endTime = '1555';//format HHMM
+require_once '../src/Auth.php';
+require_once '../src/Authenticate.php';
+require_once '../src/Date.php';
+require_once '../src/Image.php';
+require_once '../src/Response.php';
+require_once '../src/Time.php';
 
-$date = $_GET['date'] ?? date('Ymd');
-if (isset($_GET['image'])) {
-    $image = $_GET['image'];
-    $date = 20 . substr($image, 1, 6);
-}
+$folderLocation = '../data/living_room/%s/images';
 
-function isValidDate($dateToCheck)
-{
-    if (preg_match("/^(\d{4})(\d{2})(\d{2})$/", $dateToCheck, $matches)) {
-        if (checkdate($matches[2], $matches[3], $matches[1])) {
-            return true;
-        }
-    }
-    return false;
+try {
+    new Authenticate($_GET['auth'] ?? '');
+} catch (UnauthorizedAccessException $e) {
+    return new Response('You are not allowed to see this!', Response::HTTP_UNAUTHORIZED);
 }
 
-if (!isValidDate($date)) {
-    die('Invalid date');
+$date = new Date($_GET['date'] ?? date('Ymd'));
+
+if ($date->isWeekend()) {
+    return new Response('It is weekend', Response::HTTP_FORBIDDEN);
 }
 
-if (in_array(date('N', strtotime($date)), [6, 7])) {
-    die('It is weekend');
-}
+$folder = sprintf($folderLocation, $date);
 
-$folder = '../data/living_room/' . $date . '/images';
+$timestampStart = substr($date, 2) . Time::START_CLOCK . '00';
+$timestampEnd = substr($date, 2) . Time::END_CLOCK . '00';
 
-if (!is_dir($folder)) {
-    die('No images taken on this date ');
-}
-
-$images = scandir($folder);
-
-$timestampStart = substr($date, 2) . $startTime . '00';
-$timestampEnd = substr($date, 2) . $endTime . '00';
-
-if (isset($_GET['image'])) {
-    $image = $_GET['image'];
-    $imagePath = $folder . '/' . $image;
-    if ($_GET['download'] ?? false) {
-        header('Content-Disposition: attachment; filename="' . basename($image) . '"');
-    }
-    header('Content-Type: image/jpeg');
-    header('Content-Length: ' . filesize($imagePath));
-    readfile($imagePath);
-    die();
-}
-
-$showingImages = false;
-foreach ($images as $image) {
-    if (substr($image, 0, 1) !== 'A' || substr($image, -4) !== '.jpg') {
+$imagesToShow = [];
+$allImages = is_dir($folder) ? scandir($folder) : [];
+foreach ($allImages as $img) {
+    $image = new Image($img);
+    if (!$image->isFromSecurityCamera()) {
         continue;
     }
-    $timestamp = substr($image, 1, -4);
-    $timestamp = substr($timestamp, 0, -2);
-    if ($timestamp < $timestampStart) {
+    if ($image->takenBefore($timestampStart)) {
         continue;
     }
-    if ($timestamp > $timestampEnd) {
+    if ($image->takenAfter($timestampEnd)) {
         break;
     }
-    $imagePath = $folder . '/' . $image;
-    $imgData = base64_encode(file_get_contents($imagePath));
-    $src = 'data: image/jpeg;base64,' . $imgData;
-    ?>
-    <img src="<?= $src; ?>" alt="" style="max-width: 100%;">
-    <a href="?image=<?= $image; ?>&auth=<?= $_GET['auth']; ?>&download=true">Download</a>
-    |
-    <a href="?image=<?= $image; ?>&auth=<?= $_GET['auth']; ?>">Open in full screen</a>
-    <?php
-    $showingImages = true;
+    $imagesToShow[] = $image;
 }
 
-if (!$showingImages) {
-    die('No images taken between ' . substr($startTime, 0, 4) . ' and ' . substr($endTime, 0, 4));
+if (isset($_GET['asJson'])) {
+    return new Response(json_encode(array_map(function (Image $image) {
+        return $image->getImage();
+    }, $imagesToShow)), Response::HTTP_OK);
 }
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Security camera living room">
+    <link rel="manifest" href="manifest.json">
+    <title>Security camera</title>
+</head>
+
+<body>
+<?php if (!$imagesToShow): ?>
+    No images taken between <?= Time::START_CLOCK; ?> and <?= Time::END_CLOCK; ?>
+<?php endif; ?>
+<?php foreach ($imagesToShow as $image): ?>
+    <img src="/images/?name=<?= $image; ?>&auth=<?= Auth::getToken(); ?>" alt="" style="max-width: 100%;">
+    <a href="/images/?name=<?= $image; ?>&auth=<?= Auth::getToken(); ?>&download=true">Download</a>
+    |
+    <a href="/images/?name=<?= $image; ?>&auth=<?= Auth::getToken(); ?>">Open in full screen</a>
+<?php endforeach; ?>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('/sw.js').then(function (registration) {
+            }, function (err) {
+                console.error('ServiceWorker registration failed: ', err);
+            });
+        });
+    }
+</script>
+</body>
+
+</html>
