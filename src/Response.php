@@ -5,9 +5,9 @@
  */
 class Response
 {
-    const HTTP_OK = 200;
-    const HTTP_UNAUTHORIZED = 401;
-    const HTTP_FORBIDDEN = 403;
+    static public $HTTP_OK = 200;
+    static public $HTTP_UNAUTHORIZED = 401;
+    static public $HTTP_FORBIDDEN = 403;
 
     /**
      * Response constructor.
@@ -15,16 +15,17 @@ class Response
      * @param mixed $content
      * @param int   $status
      */
-    public function __construct($content = '', int $status = self::HTTP_OK)
+    public function __construct($content = '', int $status = null)
     {
+        $status = self::$HTTP_OK;
         switch ($status) {
-            case self::HTTP_OK:
+            case self::$HTTP_OK:
                 $statusText = 'OK';
                 break;
-            case self::HTTP_UNAUTHORIZED:
+            case self::$HTTP_UNAUTHORIZED:
                 $statusText = 'Unauthorized';
                 break;
-            case self::HTTP_FORBIDDEN:
+            case self::$HTTP_FORBIDDEN:
                 $statusText = 'Forbidden';
                 break;
             default:

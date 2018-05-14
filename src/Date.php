@@ -7,9 +7,9 @@ require_once 'DateValidator.php';
  */
 class Date
 {
-    private const SUNDAY = 7;
-    private const SATURDAY = 6;
-    private const WEEKEND = [self::SATURDAY, self::SUNDAY];
+    static private $SUNDAY = 7;
+    static private $SATURDAY = 6;
+    static private $WEEKEND = [6, 7];
 
     /**
      * @var string
@@ -38,7 +38,7 @@ class Date
     {
         return in_array(
             date('N', strtotime($this->date)),
-            self::WEEKEND
+            self::$WEEKEND
         );
     }
 

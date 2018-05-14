@@ -12,7 +12,7 @@ class Auth extends Authenticate
      */
     public function getToken(): string
     {
-        return parent::AUTH_KEY;
+        return parent::$AUTH_KEY;
     }
 
 }

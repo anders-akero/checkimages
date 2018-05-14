@@ -12,19 +12,19 @@ $folderLocation = '../data/living_room/%s/images';
 try {
     new Authenticate($_GET['auth'] ?? '');
 } catch (UnauthorizedAccessException $e) {
-    return new Response('You are not allowed to see this!', Response::HTTP_UNAUTHORIZED);
+    return new Response('You are not allowed to see this!', Response::$HTTP_UNAUTHORIZED);
 }
 
 $date = new Date($_GET['date'] ?? date('Ymd'));
 
 if ($date->isWeekend()) {
-    return new Response('It is weekend', Response::HTTP_FORBIDDEN);
+    return new Response('It is weekend', Response::$HTTP_FORBIDDEN);
 }
 
 $folder = sprintf($folderLocation, $date);
 
-$timestampStart = substr($date, 2) . Time::START_CLOCK . '00';
-$timestampEnd = substr($date, 2) . Time::END_CLOCK . '00';
+$timestampStart = substr($date, 2) . Time::$START_CLOCK . '00';
+$timestampEnd = substr($date, 2) . Time::$END_CLOCK . '00';
 
 $imagesToShow = [];
 $allImages = is_dir($folder) ? scandir($folder) : [];
@@ -45,7 +45,7 @@ foreach ($allImages as $img) {
 if (isset($_GET['asJson'])) {
     return new Response(json_encode(array_map(function (Image $image) {
         return $image->getImage();
-    }, $imagesToShow)), Response::HTTP_OK);
+    }, $imagesToShow)), Response::$HTTP_OK);
 }
 ?>
 
@@ -62,7 +62,7 @@ if (isset($_GET['asJson'])) {
 
 <body>
 <?php if (!$imagesToShow): ?>
-    No images taken between <?= Time::START_CLOCK; ?> and <?= Time::END_CLOCK; ?>
+    No images taken between <?= Time::$START_CLOCK; ?> and <?= Time::$END_CLOCK; ?>
 <?php endif; ?>
 <?php foreach ($imagesToShow as $image): ?>
     <img src="/images/?name=<?= $image; ?>&auth=<?= Auth::getToken(); ?>" alt="" style="max-width: 100%;">

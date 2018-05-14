@@ -8,7 +8,7 @@ require_once 'UnauthorizedAccessException.php';
  */
 class Authenticate extends Validator
 {
-    protected const AUTH_KEY = 'princessessee';
+    static protected $AUTH_KEY = 'princessessee';
     /**
      * @var string
      */
@@ -34,7 +34,7 @@ class Authenticate extends Validator
      */
     private function assertValidToken(string $token)
     {
-        if ($token !== self::AUTH_KEY) {
+        if ($token !== self::$AUTH_KEY) {
             throw new UnauthorizedAccessException('Invalid token');
         }
     }
