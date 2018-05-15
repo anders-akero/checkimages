@@ -32,8 +32,8 @@ if ($image->takenBefore($timestampStart)) {
     return new Response($message, Response::HTTP_FORBIDDEN);
 }
 if ($image->takenAfter($timestampEnd)) {
-    return new Response($message, Response::HTTP_FORBIDDEN);
     $message = 'Images taken after ' . Time::END_CLOCK;
+    return new Response($message, Response::HTTP_FORBIDDEN);
 }
 
 $folder = sprintf($folderLocation, $date);
